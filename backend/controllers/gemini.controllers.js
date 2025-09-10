@@ -6,7 +6,6 @@ import fs from "fs";
 import path from "path";
 
 dotenv.config();
-const router = express.Router();
 
 const __dirname = path.resolve();
 const excelDir = path.join(__dirname, "excel_files");
@@ -56,7 +55,7 @@ export const getGeminiResponse = async (req, res) => {
 
         res.json({
             description: output,
-            downloadUrl: `http://localhost:5000/api/gemini/excel/${filename}`,
+            downloadUrl: `http://localhost:5000/excel/${filename}`,
         });
     } catch (error) {
         console.error("Gemini API Error:", error.response?.data || error.message);
@@ -65,7 +64,3 @@ export const getGeminiResponse = async (req, res) => {
         });
     }
 }
-
-router.use("/excel", express.static(excelDir));
-
-export default router;
