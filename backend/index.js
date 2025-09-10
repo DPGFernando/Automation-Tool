@@ -17,10 +17,10 @@ app.use('/api/', getRoutes);
 app.use("/api/gemini", geminiRouter);
 app.use("/excel", express.static(path.join(__dirname, "excel_files")));
 
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.use(express.static(path.join(__dirname, "/frontend/dist")));
 
 app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
+    res.sendFile(path.join(__dirname, "/frontend/dist", "index.html"));
 });
 
 app.listen(PORT, () => {
