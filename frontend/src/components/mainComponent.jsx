@@ -55,7 +55,7 @@ function mainComponent() {
         setGeminiDescription("");
 
         try {
-            const response = await fetch("http://localhost:5000/api/gemini", {
+            const response = await fetch("http://localhost:5000/api/gemini/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt: promptText })
@@ -75,6 +75,16 @@ function mainComponent() {
             setLoadingGemini(false);
         }
     };
+
+    const handleClearAll = () => {
+        setSelectedCategory("");
+        setModelInput("");
+        setModelsArray([]);
+        setGeminiDescription("");
+        setDownloadLink("");
+        setGeminiOutput("");
+    };
+
 
 
     return (
@@ -117,6 +127,22 @@ function mainComponent() {
             <div style={{ margin: "20px 0" }}>
                 <button onClick={handleGeminiRequest} disabled={loadingGemini}>
                     {loadingGemini ? "Generating..." : "Get Gemini Output"}
+                </button>
+            </div>
+
+            <div style={{ margin: "10px 0" }}>
+                <button
+                    onClick={handleClearAll}
+                    style={{
+                        backgroundColor: "#ff4d4f",
+                        color: "white",
+                        border: "none",
+                        padding: "8px 16px",
+                        borderRadius: "5px",
+                        cursor: "pointer"
+                    }}
+                >
+                    🧹 Clear All
                 </button>
             </div>
 
