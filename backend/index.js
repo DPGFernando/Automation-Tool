@@ -1,4 +1,5 @@
 import express from "express";
+import dotenv from "dotenv";
 import getRoutes from "./routes/db.route.js";
 import geminiRouter from "./routes/gemini.route.js";
 import { connectDB } from "./db/connectDB.js";
@@ -6,10 +7,12 @@ import cors from 'cors';
 import path from 'path';
 
 const app = express();
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
 app.use(cors());
-const PORT = 5000;
 
 app.use(express.json());
 
