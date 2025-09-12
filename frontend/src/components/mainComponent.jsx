@@ -55,7 +55,7 @@ function mainComponent() {
         setGeminiDescription("");
 
         try {
-            const response = await fetch("http://localhost:5000/api/gemini/generate", {
+            const response = await fetch("/api/gemini/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt: promptText })
