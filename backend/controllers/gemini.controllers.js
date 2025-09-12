@@ -55,7 +55,7 @@ export const getGeminiResponse = async (req, res) => {
 
         res.json({
             description: output,
-            downloadUrl: `http://localhost:5000/excel/${filename}`,
+            downloadUrl: `/excel/${filename}`,
         });
     } catch (error) {
         console.error("Gemini API Error:", error.response?.data || error.message);
