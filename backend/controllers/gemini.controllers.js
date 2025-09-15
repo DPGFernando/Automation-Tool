@@ -15,63 +15,47 @@ export const getGeminiResponse = async (req, res) => {
     try {
         const { prompt } = req.body;
 
-        let output = "No output received.";
-        let csvData = null;
-        let attempts = 0;
-        const maxAttempts = 3;
-
-        while (attempts < maxAttempts && !csvData) {
-            attempts++;
-
-
-            const response = await axios.post(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-                {
-                    contents: [{ parts: [{ text: prompt }] }]
-                },
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                    }
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            {
+                contents: [{ parts: [{ text: prompt }] }]
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
                 }
-            );
-
-            if (
-                response.data.candidates &&
-                response.data.candidates.length > 0 &&
-                response.data.candidates[0].content.parts.length > 0
-            ) {
-                output = response.data.candidates[0].content.parts[0].text;
             }
+        );
 
-            const csvMatch = output.match(/```csv([\s\S]*?)```/);
-            csvData = csvMatch ? csvMatch[1].trim() : null;
-
-            if (!csvData) {
-                return res.status(400).json({ error: "No CSV data found in Gemini output" });
-            }
+        // Extract output safely
+        let output = "No output received.";
+        if (
+            response.data.candidates &&
+            response.data.candidates.length > 0 &&
+            response.data.candidates[0].content.parts.length > 0
+        ) {
+            output = response.data.candidates[0].content.parts[0].text;
         }
 
-        let downloadUrl = null;
+        const csvMatch = output.match(/```csv([\s\S]*?)```/);
+        const csvData = csvMatch ? csvMatch[1].trim() : null;
 
         if (!csvData) {
-            const rows = csvData.split("\n").map((row) => row.split(","));
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet("Specifications");
-
-            rows.forEach((row) => worksheet.addRow(row));
-
-            const filename = `specifications_${Date.now()}.xlsx`;
-            const filepath = path.join(excelDir, filename);
-            await workbook.xlsx.writeFile(filepath);
-
-            downloadUrl = `/excel/${filename}`;
+            return res.status(400).json({ error: "No CSV data found in Gemini output" });
         }
+
+        const rows = csvData.split("\n").map((row) => row.split(","));
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Specifications");
+
+        rows.forEach((row) => worksheet.addRow(row));
+        const filename = `specifications_${Date.now()}.xlsx`;
+        const filepath = path.join(excelDir, filename);
+        await workbook.xlsx.writeFile(filepath);
 
         res.json({
             description: output,
-            downloadUrl,
-            attempts
+            downloadUrl: `/excel/${filename}`,
         });
     } catch (error) {
         console.error("Gemini API Error:", error.response?.data || error.message);
