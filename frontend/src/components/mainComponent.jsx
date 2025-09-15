@@ -64,10 +64,14 @@ function mainComponent() {
             const data = await response.json();
 
             if (response.ok) {
-                setGeminiDescription(data.description);
-                setDownloadLink(data.downloadUrl);
-            } else {
-                setGeminiOutput(`Error: ${data.error}`);
+                setGeminiDescription(`${data.description}\n\n(Generated in ${data.attempts} attempt(s))`);
+
+                if (data.downloadUrl) {
+                    setDownloadLink(data.downloadUrl);
+                } else {
+                    setDownloadLink("");
+                    setGeminiOutput("⚠️ Gemini returned description only (no CSV found).");
+                }
             }
         } catch (error) {
             setGeminiOutput("Error: " + error.message);
