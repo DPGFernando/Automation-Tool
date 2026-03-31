@@ -12,6 +12,8 @@ function mainComponent() {
     const [loadingGemini, setLoadingGemini] = useState(false);
     const [geminiDescription, setGeminiDescription] = useState("");
     const [downloadLink, setDownloadLink] = useState("");
+    const [guideText, setGuideText] = useState("");
+    const [guideLoading, setGuideLoading] = useState(false);
 
     const [modelInput, setModelInput] = useState("");
     const [modelsArray, setModelsArray] = useState([]);
@@ -40,11 +42,22 @@ function mainComponent() {
         .replaceAll("${category}", categoryText)
         .replace("${models}", models)
         .replace("${specifications}", specificationsText)
-        .replace("${sites}", sitesText);
+        .replace("${sites}", sitesText)
+        .replace("${guideText}", guideText || "");
 
     useEffect(() => {
         if (selectedCategory) {
             console.log("Generated Prompt:\n", promptText);
+            setGuideLoading(true);
+            fetch(`/api/search_guides/${selectedCategory}`)
+                .then(res => res.json())
+                .then(data => {
+                    setGuideText(data.guideText || "");
+                })
+                .catch(() => setGuideText(""))
+                .finally(() => setGuideLoading(false));
+        } else {
+            setGuideText("");
         }
     }, [promptText, selectedCategory]);
 
@@ -54,26 +67,41 @@ function mainComponent() {
         setDownloadLink("");
         setGeminiDescription("");
 
-        try {
-            const response = await fetch("/api/gemini/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: promptText })
-            });
+        const maxRetries = 5;
+        let attempt = 0;
+        let success = false;
 
-            const data = await response.json();
+        while (attempt < maxRetries && !success) {
 
-            if (response.ok) {
-                setGeminiDescription(data.description);
-                setDownloadLink(data.downloadUrl);
-            } else {
-                setGeminiOutput(`Error: ${data.error}`);
+            try {
+                const response = await fetch("/api/gemini/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: promptText })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    setGeminiDescription(data.description);
+                    setDownloadLink(data.downloadUrl);
+                    success = true;
+                } else {
+                    console.warn(`Attempt ${attempt + 1} failed:`, data.error);
+                }
+            } catch (error) {
+                console.error(`Attempt ${attempt + 1} error:`, error.message);
             }
-        } catch (error) {
-            setGeminiOutput("Error: " + error.message);
-        } finally {
-            setLoadingGemini(false);
+            if (!success) {
+                attempt++;
+                await new Promise((r) => setTimeout(r, 2000));
+            }
         }
+        if (!success) {
+            setGeminiOutput("Failed to get Gemini output after multiple attempts.");
+        }
+
+        setLoadingGemini(false);
     };
 
     const handleClearAll = () => {
@@ -125,7 +153,7 @@ function mainComponent() {
             )}
 
             <div style={{ margin: "20px 0" }}>
-                <button onClick={handleGeminiRequest} disabled={loadingGemini}>
+                <button onClick={handleGeminiRequest} disabled={loadingGemini || guideLoading || !guideText}>
                     {loadingGemini ? "Generating..." : "Get Gemini Output"}
                 </button>
             </div>
